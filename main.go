@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 
+	_ "github.com/ktb-soft/secrets-injector/internal/backend/infisical"
 	_ "github.com/ktb-soft/secrets-injector/internal/backend/onepassword"
 	"github.com/ktb-soft/secrets-injector/internal/protocol"
 	"github.com/ktb-soft/secrets-injector/internal/provider"

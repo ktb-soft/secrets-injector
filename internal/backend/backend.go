@@ -19,6 +19,14 @@ type Backend interface {
 	Resolve(ctx context.Context, locators map[string]string) (map[string]string, error)
 }
 
+// Lister is implemented by backends that can enumerate a whole set of secrets
+// without being told each name in advance. The provider uses it when a compose
+// file declares no secret_mapping, so a backend that only supports explicit
+// mapping simply does not implement it.
+type Lister interface {
+	List(ctx context.Context) (map[string]string, error)
+}
+
 // Factory constructs a Backend from the provider options. It must not contact
 // the backend or read credentials, so that locator validation can run first.
 type Factory func(options map[string][]string) (Backend, error)

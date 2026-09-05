@@ -29,10 +29,6 @@ func runUp(ctx context.Context, emitter *protocol.Emitter, inv Invocation) error
 	if err != nil {
 		return err
 	}
-	if len(mapping) == 0 {
-		emitter.Info("no secrets declared")
-		return nil
-	}
 
 	name, err := inv.BackendName()
 	if err != nil {
@@ -51,24 +47,60 @@ func runUp(ctx context.Context, emitter *protocol.Emitter, inv Invocation) error
 		return err
 	}
 
-	names := slices.Sorted(maps.Keys(mapping))
-	emitter.Debug("resolving %s from %s", strings.Join(names, ", "), name)
-
-	values, err := client.Resolve(ctx, mapping)
+	values, err := fetch(ctx, emitter, client, name, mapping)
 	if err != nil {
 		return err
 	}
+	if len(values) == 0 {
+		emitter.Info("no secrets declared")
+		return nil
+	}
 
+	names := slices.Sorted(maps.Keys(values))
 	for _, envName := range names {
-		value, ok := values[envName]
-		if !ok {
-			return fmt.Errorf("backend %s returned no value for %s", name, envName)
+		if !envNamePattern.MatchString(envName) {
+			return fmt.Errorf("backend %s returned %q, which is not a valid environment variable name", name, envName)
 		}
-		emitter.RawSetEnv(envName, value)
+	}
+	for _, envName := range names {
+		emitter.RawSetEnv(envName, values[envName])
 	}
 
 	emitter.Info("injected %d secrets from %s", len(names), name)
 	return nil
+}
+
+// fetch resolves an explicit secret_mapping, or falls back to enumerating the
+// backend when the compose file declares none.
+func fetch(
+	ctx context.Context,
+	emitter *protocol.Emitter,
+	client backend.Backend,
+	name string,
+	mapping map[string]string,
+) (map[string]string, error) {
+	if len(mapping) == 0 {
+		lister, ok := client.(backend.Lister)
+		if !ok {
+			return nil, fmt.Errorf("backend %s requires secret_mapping", name)
+		}
+		emitter.Debug("listing every secret from %s", name)
+		return lister.List(ctx)
+	}
+
+	requested := slices.Sorted(maps.Keys(mapping))
+	emitter.Debug("resolving %s from %s", strings.Join(requested, ", "), name)
+
+	values, err := client.Resolve(ctx, mapping)
+	if err != nil {
+		return nil, err
+	}
+	for _, envName := range requested {
+		if _, ok := values[envName]; !ok {
+			return nil, fmt.Errorf("backend %s returned no value for %s", name, envName)
+		}
+	}
+	return values, nil
 }
 
 // validateLocators reports every malformed locator at once, before any
