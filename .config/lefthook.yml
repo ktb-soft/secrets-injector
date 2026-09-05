@@ -1,0 +1,7 @@
+---
+pre-commit:
+  jobs:
+    - name: "KSTORE | pack files"
+      run: "mise run kstore:pack --stage"
+    - name: "GO | guardrails"
+      run: "mise run check"

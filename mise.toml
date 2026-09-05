@@ -1,0 +1,28 @@
+[tools]
+go = "1.27"
+golangci-lint = "2.13.2"
+lefthook = "2.1.12"
+
+[tasks.build]
+description = "Build the provider binary"
+run = "go build -o secrets-injector ."
+
+[tasks.fmt]
+description = "Format all Go source"
+run = "gofmt -w ."
+
+[tasks.vet]
+description = "Run go vet"
+run = "go vet ./..."
+
+[tasks.lint]
+description = "Run golangci-lint"
+run = "golangci-lint run"
+
+[tasks.test]
+description = "Run the test suite"
+run = "go test ./..."
+
+[tasks.check]
+description = "Run every guardrail"
+depends = ["vet", "lint", "test"]
