@@ -9,6 +9,7 @@ import (
 
 	_ "github.com/ktb-soft/secrets-injector/internal/backend/infisical"
 	_ "github.com/ktb-soft/secrets-injector/internal/backend/onepassword"
+	_ "github.com/ktb-soft/secrets-injector/internal/backend/onepasswordconnect"
 	"github.com/ktb-soft/secrets-injector/internal/protocol"
 	"github.com/ktb-soft/secrets-injector/internal/provider"
 )

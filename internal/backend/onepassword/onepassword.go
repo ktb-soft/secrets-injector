@@ -6,10 +6,11 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strings"
 
 	opsdk "github.com/1password/onepassword-sdk-go"
+
 	"github.com/ktb-soft/secrets-injector/internal/backend"
+	"github.com/ktb-soft/secrets-injector/internal/backend/opref"
 )
 
 const (
@@ -19,7 +20,6 @@ const (
 	// environment so the token never appears in a compose file.
 	TokenEnvVar = "OP_SERVICE_ACCOUNT_TOKEN"
 
-	locatorScheme      = "op://"
 	integrationName    = "secrets-injector"
 	integrationVersion = "0.1.0"
 )
@@ -38,21 +38,7 @@ func New(_ map[string][]string) (backend.Backend, error) {
 
 // ValidateLocator checks an op://vault/item[/section]/field reference.
 func (resolver) ValidateLocator(locator string) error {
-	if !strings.HasPrefix(locator, locatorScheme) {
-		return fmt.Errorf("want an %s reference, got %q", locatorScheme, locator)
-	}
-
-	path, _, _ := strings.Cut(strings.TrimPrefix(locator, locatorScheme), "?")
-	segments := strings.Split(path, "/")
-	if len(segments) < 3 || len(segments) > 4 {
-		return fmt.Errorf("want %svault/item[/section]/field, got %q", locatorScheme, locator)
-	}
-	for _, segment := range segments {
-		if segment == "" {
-			return fmt.Errorf("%q has an empty path segment", locator)
-		}
-	}
-	return nil
+	return opref.Validate(locator)
 }
 
 // Resolve fetches every reference in one call and maps the values back onto the
